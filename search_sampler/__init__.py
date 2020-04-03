@@ -120,9 +120,9 @@ class SearchSampler(object):
         """
 
         url = "/".join([
-            self._server,
+            str(self._server),
             'discovery/v1/apis/trends',
-            self._version,
+            str(self._version),
             "rest"
         ])
         service = build(
@@ -141,7 +141,7 @@ class SearchSampler(object):
 
         """
 
-        str_path = os.path.join(self.output_path, self.params["region"])
+        str_path = os.path.join(str(self.output_path), str(self.params["region"]))
         str_file_name = '{region}-{identifier}.csv'.format(
             region=self.params['region'],
             identifier=self._search_name
@@ -158,7 +158,7 @@ class SearchSampler(object):
         """
 
         load_path, load_filename = self._get_file_path()
-        full_file_path = os.path.join(load_path, load_filename)
+        full_file_path = os.path.join(str(load_path), str(load_filename))
         print('Attempting to load local file: {}'.format(full_file_path))
         return pandas.read_csv(full_file_path)
 
@@ -174,7 +174,6 @@ class SearchSampler(object):
         :return: None
 
         """
-
         # set up paths and file name
         load_path, load_filename = self._get_file_path()
 
@@ -191,7 +190,7 @@ class SearchSampler(object):
                 else:
                     df = pandas.concat([df_prev_results, df])
 
-        full_file_path = os.path.join(load_path, load_filename)
+        full_file_path = os.path.join(str(load_path), str(load_filename))
         print('Saving local file: {}'.format(full_file_path))
         df.to_csv(full_file_path, encoding='utf-8', index=False)
 
@@ -262,7 +261,7 @@ class SearchSampler(object):
         # See the difference between geoRestriction_region, _country, and _dma
         if isinstance(params['region'], list):
             test_region = str(params['region'][0])
-            params['region'] = "'{}'".format("', '".join(params['region']))
+            params['region'] = "'{}'".format("', '".join(str(params['region'])))
         else:
             test_region = str(params['region'])
 
@@ -321,8 +320,16 @@ class SearchSampler(object):
                     df['period'] = pandas.to_datetime(df.date, format='%b %Y')
                 d_results[curr_term] = df
             if format == 'dataframe':
-                return pandas.DataFrame(d_results)
-            elif format == 'dict':
+                # process of saving is slightly different when asking for multiple 
+                # search terms than for just one
+                # Need to convert from a dictionary of dataframes
+                if len(d_results) > 1:                    
+                    df = pandas.concat(d_results).reset_index()[['level_0', 'date', 'value', 'period']]
+                    df = df.rename(columns={'level_0':'search_term'})                
+                else:
+                    df = pandas.DataFrame(d_results)
+                return df
+            elif format == 'dict':                
                 return d_results
             else:
                 raise ValueError("Please provide a proper format for results. Available options are: dict, dataframe.")
