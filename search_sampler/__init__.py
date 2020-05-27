@@ -465,7 +465,7 @@ class SearchSampler(object):
                         # This will skip over that
                         rows.append({
                             "term": term,
-                            "timestamp": timestamp,
+                            "period": timestamp,
                             "sample": i,
                             "value": sample,
                             "query_time": query_time
